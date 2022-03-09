@@ -1,9 +1,10 @@
 import re
 from concurrent.futures import Future
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Union, Iterable
+from typing import Optional, List, Dict, Any, Union, Iterable, Set
 import agate
 from dbt.contracts.relation import RelationType
+from dbt.contracts.graph.manifest import Manifest
 
 import dbt
 import dbt.exceptions
@@ -122,6 +123,38 @@ class SparkAdapter(SQLAdapter):
             self.cache.add_schema(None, schema)
         # so jinja doesn't render things
         return ''
+        
+    def _get_cache_schemas(self, manifest: Manifest) -> Set[BaseRelation]:
+        """Get the set of schema relations that the cache logic needs to
+        populate. This means only executable nodes are included.
+        """
+        # the cache only cares about executable nodes
+        relations = [
+            self.Relation.create_from(self.config, node)  # keep the identifier
+            for node in manifest.nodes.values()
+            if (
+                node.is_relational and not node.is_ephemeral_model
+            )
+        ]
+        # group up relations by common schema
+        import collections
+        relmap = collections.defaultdict(list)
+        for r in relations:
+            relmap[r.schema].append(r)
+        # create a single relation for each schema
+        # set the identifier to a '|' delimited string of relation names, or '*'
+        schemas = [
+            self.Relation.create(
+                schema=schema,                
+                identifier=(
+                    '|'.join(r.identifier for r in rels)
+                    # there's probably some limit to how many we can include by name
+                    if len(rels) < 100 else '*'
+                )
+            ) for schema, rels in relmap.items()
+        ]
+        return schemas
+
 
     def list_relations_without_caching(
         self, schema_relation: SparkRelation
