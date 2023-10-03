@@ -6,7 +6,7 @@ from dbt.adapters.sql import SQLConnectionManager
 from dbt.contracts.connection import ConnectionState, AdapterResponse
 from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
-from dbt.adapters.spark import __version__
+from dbt.adapters.ocean_spark import __version__
 
 try:
     from TCLIService.ttypes import TOperationState as ThriftState
@@ -36,10 +36,9 @@ try:
 except ImportError:
     pass  # done deliberately: setting modules to None explicitly violates MyPy contracts by degrading type semantics
 
-import base64
 import time
 
-logger = AdapterLogger("Spark")
+logger = AdapterLogger("OceanSpark")
 
 NUMBERS = DECIMALS + (int, float)
 
@@ -62,6 +61,8 @@ class SparkCredentials(Credentials):
     database: Optional[str]  # type: ignore
     driver: Optional[str] = None
     cluster: Optional[str] = None
+    app: Optional[str] = None
+    account: Optional[str] = None
     endpoint: Optional[str] = None
     token: Optional[str] = None
     user: Optional[str] = None
@@ -144,14 +145,14 @@ class SparkCredentials(Credentials):
 
     @property
     def type(self) -> str:
-        return "spark"
+        return "ocean_spark"
 
     @property
     def unique_field(self) -> str:
         return self.host
 
     def _connection_keys(self) -> Tuple[str, ...]:
-        return "host", "port", "cluster", "endpoint", "schema", "organization"
+        return "host", "port", "cluster", "endpoint", "schema", "organization", "app", "account"
 
 
 class PyhiveConnectionWrapper(object):
@@ -285,9 +286,9 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
 
 
 class SparkConnectionManager(SQLConnectionManager):
-    TYPE = "spark"
+    TYPE = "ocean_spark"
 
-    SPARK_CLUSTER_HTTP_PATH = "/sql/protocolv1/o/{organization}/{cluster}"
+    SPARK_CLUSTER_HTTP_PATH = "/ocean/spark/cluster/{cluster}/app/{app}/code?accountId={account}"
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
 
@@ -354,7 +355,10 @@ class SparkConnectionManager(SQLConnectionManager):
         for i in range(1 + creds.connect_retries):
             try:
                 if creds.method == SparkConnectionMethod.HTTP:
-                    cls.validate_creds(creds, ["token", "host", "port", "cluster", "organization"])
+                    cls.validate_creds(
+                        creds,
+                        ["token", "host", "port", "cluster", "organization", "app", "account"],
+                    )
 
                     # Prepend https:// if it is missing
                     host = creds.host
@@ -366,15 +370,18 @@ class SparkConnectionManager(SQLConnectionManager):
                         port=creds.port,
                         organization=creds.organization,
                         cluster=creds.cluster,
+                        app=creds.app,
+                        account=creds.account,
                     )
 
                     logger.debug("connection url: {}".format(conn_url))
 
                     transport = THttpClient.THttpClient(conn_url)
 
-                    raw_token = "token:{}".format(creds.token).encode()
-                    token = base64.standard_b64encode(raw_token).decode()
-                    transport.setCustomHeaders({"Authorization": "Basic {}".format(token)})
+                    # raw_token = "token:{}".format(creds.token).encode()
+                    # token = base64.standard_b64encode(raw_token).decode()
+                    token = creds.token
+                    transport.setCustomHeaders({"Authorization": "Bearer {}".format(token)})
 
                     conn = hive.connect(thrift_transport=transport)
                     handle = PyhiveConnectionWrapper(conn)

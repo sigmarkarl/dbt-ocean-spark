@@ -8,7 +8,6 @@ __pycache__
 build/
 env*/
 dbt_env/
-dist/
 *.egg-info
 logs/
 

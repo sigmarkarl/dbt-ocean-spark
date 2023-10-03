@@ -6,7 +6,7 @@ from dbt.adapters.base.relation import BaseRelation, Policy
 from dbt.exceptions import DbtRuntimeError
 from dbt.events import AdapterLogger
 
-logger = AdapterLogger("Spark")
+logger = AdapterLogger("OceanSpark")
 
 Self = TypeVar("Self", bound="BaseRelation")
 

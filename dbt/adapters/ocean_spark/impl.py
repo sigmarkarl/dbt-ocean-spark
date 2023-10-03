@@ -31,7 +31,7 @@ from dbt.contracts.relation import RelationType
 from dbt.events import AdapterLogger
 from dbt.utils import executor, AttrDict
 
-logger = AdapterLogger("Spark")
+logger = AdapterLogger("OceanSpark")
 
 GET_COLUMNS_IN_RELATION_RAW_MACRO_NAME = "get_columns_in_relation_raw"
 LIST_SCHEMAS_MACRO_NAME = "list_schemas"

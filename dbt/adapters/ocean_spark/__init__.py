@@ -5,8 +5,8 @@ from dbt.adapters.ocean_spark.column import SparkColumn  # noqa
 from dbt.adapters.ocean_spark.impl import SparkAdapter
 
 from dbt.adapters.base import AdapterPlugin
-from dbt.include import spark
+from dbt.include import ocean_spark
 
 Plugin = AdapterPlugin(
-    adapter=SparkAdapter, credentials=SparkCredentials, include_path=spark.PACKAGE_PATH  # type: ignore
+    adapter=SparkAdapter, credentials=SparkCredentials, include_path=ocean_spark.PACKAGE_PATH  # type: ignore
 )

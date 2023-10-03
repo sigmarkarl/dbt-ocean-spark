@@ -11,7 +11,7 @@ from dbt.utils import DECIMALS
 from pyspark.sql import DataFrame, Row, SparkSession
 
 
-logger = AdapterLogger("Spark")
+logger = AdapterLogger("OceanSpark")
 NUMBERS = DECIMALS + (int, float)
 
 
