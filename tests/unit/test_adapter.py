@@ -156,7 +156,9 @@ class TestSparkAdapter(unittest.TestCase):
             )
 
         # with mock.patch.object(hive, 'connect', new=hive_http_connect):
-        with mock.patch("dbt.adapters.spark.connections.hive.connect", new=hive_http_connect):
+        with mock.patch(
+            "dbt.adapters.ocean_spark.connections.hive.connect", new=hive_http_connect
+        ):
             connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
 
@@ -243,7 +245,7 @@ class TestSparkAdapter(unittest.TestCase):
             )  # noqa
 
         with mock.patch(
-            "dbt.adapters.spark.connections.pyodbc.connect", new=pyodbc_connect
+            "dbt.adapters.ocean_spark.connections.pyodbc.connect", new=pyodbc_connect
         ):  # noqa
             connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load
@@ -269,7 +271,7 @@ class TestSparkAdapter(unittest.TestCase):
             )  # noqa
 
         with mock.patch(
-            "dbt.adapters.spark.connections.pyodbc.connect", new=pyodbc_connect
+            "dbt.adapters.ocean_spark.connections.pyodbc.connect", new=pyodbc_connect
         ):  # noqa
             connection = adapter.acquire_connection("dummy")
             connection.handle  # trigger lazy-load

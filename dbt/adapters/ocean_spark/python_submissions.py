@@ -6,8 +6,8 @@ import uuid
 
 import dbt.exceptions
 from dbt.adapters.base import PythonJobHelper
-from dbt.adapters.spark import SparkCredentials
-from dbt.adapters.spark import __version__
+from dbt.adapters.ocean_spark import SparkCredentials
+from dbt.adapters.ocean_spark import __version__
 
 DEFAULT_POLLING_INTERVAL = 10
 SUBMISSION_LANGUAGE = "python"

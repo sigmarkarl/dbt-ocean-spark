@@ -30,7 +30,9 @@ with open(os.path.join(this_directory, "README.md"), "r", encoding="utf8") as f:
 
 # get this package's version from dbt/adapters/<name>/__version__.py
 def _get_plugin_version_dict():
-    _version_path = os.path.join(this_directory, "dbt", "adapters", "spark", "__version__.py")
+    _version_path = os.path.join(
+        this_directory, "dbt", "adapters", "ocean_spark", "__version__.py"
+    )
     _semver = r"""(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"""
     _pre = r"""((?P<prekind>a|b|rc)(?P<pre>\d+))?"""
     _version_pattern = rf"""version\s*=\s*["']{_semver}{_pre}["']"""
@@ -49,7 +51,7 @@ def _get_dbt_core_version():
     return f"{minor}{pre}"
 
 
-package_name = "dbt-spark"
+package_name = "dbt-ocean-spark"
 package_version = "1.6.0"
 dbt_core_version = _get_dbt_core_version()
 description = """The Apache Spark adapter plugin for dbt"""
@@ -70,7 +72,7 @@ setup(
     long_description_content_type="text/markdown",
     author="dbt Labs",
     author_email="info@dbtlabs.com",
-    url="https://github.com/dbt-labs/dbt-spark",
+    url="https://github.com/sigmarkarl/dbt-ocean-spark",
     packages=find_namespace_packages(include=["dbt", "dbt.*"]),
     include_package_data=True,
     install_requires=[

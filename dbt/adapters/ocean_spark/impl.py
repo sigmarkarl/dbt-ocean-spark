@@ -16,10 +16,10 @@ import dbt.exceptions
 from dbt.adapters.base import AdapterConfig, PythonJobHelper
 from dbt.adapters.base.impl import catch_as_completed, ConstraintSupport
 from dbt.adapters.sql import SQLAdapter
-from dbt.adapters.spark import SparkConnectionManager
-from dbt.adapters.spark import SparkRelation
-from dbt.adapters.spark import SparkColumn
-from dbt.adapters.spark.python_submissions import (
+from dbt.adapters.ocean_spark import SparkConnectionManager
+from dbt.adapters.ocean_spark import SparkRelation
+from dbt.adapters.ocean_spark import SparkColumn
+from dbt.adapters.ocean_spark.python_submissions import (
     JobClusterPythonJobHelper,
     AllPurposeClusterPythonJobHelper,
 )
