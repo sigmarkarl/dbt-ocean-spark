@@ -8,6 +8,8 @@ from dbt.events import AdapterLogger
 from dbt.utils import DECIMALS
 from dbt.adapters.ocean_spark import __version__
 
+from .twebsocket import TWebSocket
+
 try:
     from TCLIService.ttypes import TOperationState as ThriftState
     from thrift.transport import THttpClient
@@ -28,9 +30,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Union, Tuple, List, Generator, Iterable
 
 try:
-    from thrift.transport.TSSLSocket import TSSLSocket
     import thrift
-    import ssl
     import sasl
     import thrift_sasl
 except ImportError:
@@ -288,7 +288,9 @@ class PyodbcConnectionWrapper(PyhiveConnectionWrapper):
 class SparkConnectionManager(SQLConnectionManager):
     TYPE = "ocean_spark"
 
-    SPARK_CLUSTER_HTTP_PATH = "/ocean/spark/cluster/{cluster}/app/{app}/code?accountId={account}"
+    SPARK_CLUSTER_HTTP_PATH = (
+        "/ocean/spark/cluster/{cluster}/app/{app}/{endpoint}?accountId={account}"
+    )
     SPARK_SQL_ENDPOINT_HTTP_PATH = "/sql/1.0/endpoints/{endpoint}"
     SPARK_CONNECTION_URL = "{host}:{port}" + SPARK_CLUSTER_HTTP_PATH
 
@@ -372,6 +374,7 @@ class SparkConnectionManager(SQLConnectionManager):
                         cluster=creds.cluster,
                         app=creds.app,
                         account=creds.account,
+                        endpoint="code",
                     )
 
                     logger.debug("connection url: {}".format(conn_url))
@@ -388,25 +391,26 @@ class SparkConnectionManager(SQLConnectionManager):
                 elif creds.method == SparkConnectionMethod.THRIFT:
                     cls.validate_creds(creds, ["host", "port", "user", "schema"])
 
-                    if creds.use_ssl:
-                        transport = build_ssl_transport(
-                            host=creds.host,
-                            port=creds.port,
-                            username=creds.user,
-                            auth=creds.auth,
-                            kerberos_service_name=creds.kerberos_service_name,
-                            password=creds.password,
-                        )
-                        conn = hive.connect(thrift_transport=transport)
-                    else:
-                        conn = hive.connect(
-                            host=creds.host,
-                            port=creds.port,
-                            username=creds.user,
-                            auth=creds.auth,
-                            kerberos_service_name=creds.kerberos_service_name,
-                            password=creds.password,
-                        )  # noqa
+                    conn_url = cls.SPARK_CONNECTION_URL.format(
+                        host=creds.host,
+                        port=creds.port,
+                        organization=creds.organization,
+                        cluster=creds.cluster,
+                        app=creds.app,
+                        account=creds.account,
+                        endpoint="hive",
+                    )
+
+                    transport = build_ssl_transport(
+                        url="wss://" + conn_url,
+                        token=creds.token,
+                        host=creds.host,
+                        username=creds.user,
+                        auth="NOSASL",
+                        kerberos_service_name=creds.kerberos_service_name,
+                        password=creds.password,
+                    )
+                    conn = hive.connect(thrift_transport=transport)
                     handle = PyhiveConnectionWrapper(conn)
                 elif creds.method == SparkConnectionMethod.ODBC:
                     if creds.cluster is not None:
@@ -525,19 +529,18 @@ class SparkConnectionManager(SQLConnectionManager):
 
 
 def build_ssl_transport(
+    url: str,
+    token: str,
     host: str,
-    port: int,
     username: str,
     auth: str,
     kerberos_service_name: str,
     password: Optional[str] = None,
 ) -> "thrift_sasl.TSaslClientTransport":
     transport = None
-    if port is None:
-        port = 10000
     if auth is None:
         auth = "NONE"
-    socket = TSSLSocket(host, port, cert_reqs=ssl.CERT_NONE)
+    socket = TWebSocket(url, token)
     if auth == "NOSASL":
         # NOSASL corresponds to hive.server2.authentication=NOSASL
         # in hive-site.xml

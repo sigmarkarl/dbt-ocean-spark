@@ -16,7 +16,7 @@ dbt is the T in ELT. Organize, cleanse, denormalize, filter, rename, and pre-agg
 
 ## dbt-spark
 
-The `dbt-spark` package contains all of the code enabling dbt to work with Apache Spark and Databricks. For
+The `dbt-ocean-spark` package contains all of the code enabling dbt to work with Apache Spark on Ocean. For
 more information, consult [the docs](https://docs.getdbt.com/docs/profile-spark).
 
 ## Getting started
@@ -42,11 +42,13 @@ spark_testing:
   target: local
   outputs:
     local:
-      type: spark
-      method: thrift
-      host: 127.0.0.1
-      port: 10000
-      user: dbt
+      type: ocean_spark
+      method: http
+      host: api.spotinst.io
+      port: 443
+      cluster: osc-[clusterId]
+      account: acc-[accountId]
+      app: spark-hive-[appId]
       schema: analytics
       connect_retries: 5
       connect_timeout: 60
@@ -55,7 +57,7 @@ spark_testing:
 
 Connecting to the local spark instance:
 
-* The Spark UI should be available at [http://localhost:4040/sqlserver/](http://localhost:4040/sqlserver/)
+* The Spark UI should be available at [http://console.spotinst.com/ocean/spark/cluster/{clusterId}/app/{appId}/sparkUI/jobs](http://localhost:4040/sqlserver/)
 * The endpoint for SQL-based testing is at `http://localhost:10000` and can be referenced with the Hive or Spark JDBC drivers using connection string `jdbc:hive2://localhost:10000` and default credentials `dbt`:`dbt`
 
 Note that the Hive metastore data is persisted under `./.hive-metastore/`, and the Spark-produced data under `./.spark-warehouse/`. To completely reset you environment run the following:
