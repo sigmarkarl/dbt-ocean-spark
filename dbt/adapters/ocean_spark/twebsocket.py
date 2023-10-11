@@ -1,6 +1,5 @@
 from thrift.transport.TTransport import TTransportBase
 from websockets.sync.client import connect
-import Union
 
 
 class TWebSocket(TTransportBase):
@@ -25,8 +24,11 @@ class TWebSocket(TTransportBase):
     def close(self) -> None:
         self.ws.close()
 
-    def read(self, sz: int) -> Union[bytes, str]:
-        return self.ws.recv(sz)
+    def read(self, sz: int) -> bytes:
+        buff = self.ws.recv(sz)
+        if isinstance(buff, str):
+            return buff.encode()
+        return buff
 
     def readAll(self, sz: int) -> bytes:
         buff = b""
